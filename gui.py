@@ -44,8 +44,22 @@ class App:
         self.running = True
 
     def _build_ui(self):
-        frm = ttk.Frame(self.root, padding=8)
-        frm.grid(row=0, column=0, sticky="nsew")
+        # Create notebook (tabbed interface)
+        notebook = ttk.Notebook(self.root)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Main controls tab
+        main_tab = ttk.Frame(notebook, padding=8)
+        notebook.add(main_tab, text="Main Controls")
+        
+        # Settings tab
+        settings_tab = ttk.Frame(notebook, padding=8)
+        notebook.add(settings_tab, text="Genre Settings")
+        
+        self._build_main_controls(main_tab)
+        self._build_genre_settings(settings_tab)
+    
+    def _build_main_controls(self, frm):
 
         # FSR sliders (0..1023 to mimic ADC)
         fsr_frame = ttk.LabelFrame(frm, text="FSR Sensors (0..1023)", padding=6)
@@ -123,6 +137,21 @@ class App:
         self.audio_enabled_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(midi_frame, text="Audio Feedback", variable=self.audio_enabled_var, 
                        command=self._toggle_audio).grid(row=0, column=2, padx=4)
+        
+        # Volume control
+        volume_frame = ttk.LabelFrame(ctrl_frame, text="Master Volume", padding=6)
+        volume_frame.grid(row=0, column=5, padx=8)
+        
+        ttk.Label(volume_frame, text="0%").grid(row=0, column=0, padx=2)
+        self.volume_var = tk.DoubleVar(value=100)
+        self.volume_slider = ttk.Scale(volume_frame, from_=0, to=200, orient=tk.HORIZONTAL, 
+                                       variable=self.volume_var, length=150,
+                                       command=self._update_volume)
+        self.volume_slider.grid(row=0, column=1, padx=5)
+        ttk.Label(volume_frame, text="200%").grid(row=0, column=2, padx=2)
+        
+        self.volume_label = ttk.Label(volume_frame, text="100%", font=('Arial', 10, 'bold'))
+        self.volume_label.grid(row=1, column=0, columnspan=3, pady=2)
         self.connect_btn.grid(row=0, column=0, padx=4)
         self.virtual_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(midi_frame, text="Virtual Port", variable=self.virtual_var).grid(row=0, column=1, padx=4)
@@ -133,17 +162,100 @@ class App:
         self.log_widget = scrolledtext.ScrolledText(log_frame, width=80, height=10, state=tk.DISABLED)
         self.log_widget.pack(fill=tk.BOTH, expand=True)
 
-        # Make window resizable
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
+        # Make main tab resizable
+        frm.columnconfigure(0, weight=1)
+        frm.columnconfigure(1, weight=1)
+        frm.rowconfigure(2, weight=1)
+    
+    def _build_genre_settings(self, frm):
+        """Build genre selection and settings UI"""
+        # Title
+        title = ttk.Label(frm, text="Musical Genre Selection", font=('Arial', 14, 'bold'))
+        title.pack(pady=10)
+        
+        # Description
+    
+    def _change_genre(self, genre_key):
+        """Change the current musical genre"""
+        self.synth.set_genre(genre_key)
+        
+        # Update status label
+        genres = self.synth.get_genre_list()
+        for key, name, description in genres:
+            if key == genre_key:
+                self.genre_status_label.config(
+                    text=f"Current Genre: {name} - {description}"
+                )
+                break
+        
+        self._log(f"Genre changed to: {genre_key}")
+    
+    def _update_volume(self, value):
+        """Update master volume"""
+        volume_percent = float(value)
+        volume_normalized = volume_percent / 100.0
+        self.synth.set_volume(volume_normalized)
+        self.volume_label.config(text=f"{int(volume_percent)}%")
+    
+    def _build_genre_settings(self, frm):
+        """Build genre selection and settings UI"""
+        # Title
+        title = ttk.Label(frm, text="Musical Genre Selection", font=('Arial', 14, 'bold'))
+        title.pack(pady=10)
+        
+        # Description
+        desc = ttk.Label(frm, text="Choose a musical style to customize the sound characteristics", 
+                        font=('Arial', 10))
+        desc.pack(pady=5)
+        
+        # Genre selection frame
+        genre_frame = ttk.LabelFrame(frm, text="Available Genres", padding=15)
+        genre_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        
+        # Get available genres
+        genres = self.synth.get_genre_list()
+        self.current_genre_var = tk.StringVar(value='jazz')
+        
+        # Create radio buttons for each genre
+        for i, (key, name, description) in enumerate(genres):
+            frame = ttk.Frame(genre_frame)
+            frame.pack(fill=tk.X, pady=8, padx=10)
+            
+            # Radio button
+            rb = ttk.Radiobutton(
+                frame, 
+                text=name, 
+                value=key, 
+                variable=self.current_genre_var,
+                command=lambda k=key: self._change_genre(k)
+            )
+            rb.pack(side=tk.LEFT, padx=5)
+            
+            # Description
+            desc_label = ttk.Label(frame, text=f"  {description}", foreground='gray')
+            desc_label.pack(side=tk.LEFT, padx=5)
+        
+        # Current status
+        status_frame = ttk.LabelFrame(frm, text="Current Status", padding=10)
+        status_frame.pack(fill=tk.X, padx=20, pady=10)
+        
+        self.genre_status_label = ttk.Label(
+            status_frame, 
+            text="Current Genre: Jazz - Smooth, warm tones with rich harmonics",
+            font=('Arial', 10, 'italic'),
+            foreground='blue'
+        )
+        self.genre_status_label.pack(pady=5)
 
     def _toggle_audio(self):
         if self.audio_enabled_var.get():
             self.mapper.audio_synth = self.synth
-            self._log("Audio feedback enabled")
+            self.mapper.imu_audio_enabled = True  # Enable IMU too
+            self._log("Audio feedback enabled (including IMU)")
         else:
             self.synth.all_notes_off()
             self.mapper.audio_synth = None
+            self.mapper.imu_audio_enabled = False
             self._log("Audio feedback disabled")
 
     def _open_midi(self):

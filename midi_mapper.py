@@ -53,6 +53,13 @@ class MidiMapper:
         self.audio_synth = audio_synth  # Optional audio synthesizer
         # track note state to send note_off when pressure released
         self._note_on = [False] * len(self.notes)
+        
+        # IMU audio control
+        self.imu_audio_enabled = True  # ENABLED by default
+        
+        # IMU smoothing buffers
+        self._imu_velocities = {}  # Store last velocity for each IMU axis
+        self._imu_notes = {}  # Store current note for each IMU axis
 
     def _velocity_from_level(self, level: float) -> int:
         # level is 0.0..1.0 -> velocity 1..127 (0 reserved)
@@ -90,15 +97,13 @@ class MidiMapper:
         msg_pb = mido.Message('pitchwheel', pitch=pitch, channel=self.channel)
         self.driver.send(msg_pb)
         
-        # Audio feedback for gyro X - map to notes 72-84 (high register)
-        if self.audio_synth and abs(gx) > 0.1:
-            gx_note = int(72 + (gx + 1.0) / 2.0 * 12)  # Map -1..1 to notes 72-84
-            gx_vel = int(abs(gx) * 100)
-            self.audio_synth.note_on(gx_note, gx_vel, 'imu_gx')
-        elif self.audio_synth:
-            # Turn off when below threshold
-            for n in range(72, 85):
-                self.audio_synth.note_off(n, 'imu_gx')
+        # Audio feedback for gyro X - SIMPLIFIED
+        if self.audio_synth and self.imu_audio_enabled:
+            if abs(gx) > 0.4:  # Higher threshold to reduce noise
+                vel = max(20, int(abs(gx) * 30))  # Quieter - max 30
+                self.audio_synth.note_on(72, vel, 'imu_gx')
+            else:
+                self.audio_synth.note_off(72, 'imu_gx')
 
         # Use gyro Y (gy) mapped to CC1 (modulation) 0..127
         gy = imu_snapshot.get("gy", 0.0)
@@ -106,21 +111,46 @@ class MidiMapper:
         msg_cc = mido.Message('control_change', control=1, value=cc_val, channel=self.channel)
         self.driver.send(msg_cc)
         
-        # Audio feedback for gyro Y - map to notes 84-96
-        if self.audio_synth and abs(gy) > 0.1:
-            gy_note = int(84 + (gy + 1.0) / 2.0 * 12)
-            gy_vel = int(abs(gy) * 100)
-            self.audio_synth.note_on(gy_note, gy_vel, 'imu_gy')
-        elif self.audio_synth:
-            for n in range(84, 97):
-                self.audio_synth.note_off(n, 'imu_gy')
+        # Audio feedback for gyro Y - SIMPLIFIED
+        if self.audio_synth and self.imu_audio_enabled:
+            if abs(gy) > 0.4:
+                vel = max(20, int(abs(gy) * 30))
+                self.audio_synth.note_on(84, vel, 'imu_gy')
+            else:
+                self.audio_synth.note_off(84, 'imu_gy')
         
-        # Audio feedback for gyro Z - map to notes 96-108
-        gz = imu_snapshot.get("gz", 0.0)
-        if self.audio_synth and abs(gz) > 0.1:
-            gz_note = int(96 + (gz + 1.0) / 2.0 * 12)
-            gz_vel = int(abs(gz) * 80)
-            self.audio_synth.note_on(gz_note, gz_vel, 'imu_gz')
-        elif self.audio_synth:
-            for n in range(96, 109):
-                self.audio_synth.note_off(n, 'imu_gz')
+        # Audio feedback for gyro Z - SIMPLIFIED
+        if self.audio_synth and self.imu_audio_enabled:
+            gz = imu_snapshot.get("gz", 0.0)
+            if abs(gz) > 0.4:
+                vel = max(20, int(abs(gz) * 30))
+                self.audio_synth.note_on(96, vel, 'imu_gz')
+            else:
+                self.audio_synth.note_off(96, 'imu_gz')
+        
+        # Audio feedback for accelerometer axes - SIMPLIFIED
+        ax = imu_snapshot.get("ax", 0.0)
+        ay = imu_snapshot.get("ay", 0.0)
+        az = imu_snapshot.get("az", 0.0)
+        
+        if self.audio_synth and self.imu_audio_enabled:
+            # Ax
+            if abs(ax) > 0.4:
+                vel = max(15, int(abs(ax) * 25))
+                self.audio_synth.note_on(48, vel, 'imu_ax')
+            else:
+                self.audio_synth.note_off(48, 'imu_ax')
+            
+            # Ay
+            if abs(ay) > 0.4:
+                vel = max(15, int(abs(ay) * 25))
+                self.audio_synth.note_on(36, vel, 'imu_ay')
+            else:
+                self.audio_synth.note_off(36, 'imu_ay')
+            
+            # Az
+            if abs(az) > 0.4:
+                vel = max(15, int(abs(az) * 25))
+                self.audio_synth.note_on(24, vel, 'imu_az')
+            else:
+                self.audio_synth.note_off(24, 'imu_az')

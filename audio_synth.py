@@ -107,6 +107,7 @@ class Voice:
         self.age = 0.0  # Voice age in seconds
         self.released = False
         self.release_age = 0.0
+        self.last_output = 0.0  # For smoothing
         
     def generate(self, num_samples, waveform_type='sine'):
         """Generate audio samples with envelope and effects"""
@@ -133,49 +134,50 @@ class Voice:
             else:
                 env_value = 0.0
         
-        # Generate base waveform with harmonics
-        output = np.zeros(num_samples, dtype=np.float32)
-        harmonics = self.preset['harmonics']
+        # Generate base waveform - SIMPLIFIED for cleaner sound
+        freq = self.freq
         
-        for harmonic_num, amplitude in enumerate(harmonics, 1):
-            freq = self.freq * harmonic_num
-            
-            # Add vibrato
-            vibrato_rate = self.preset.get('vibrato_rate', 0)
-            vibrato_depth = self.preset.get('vibrato_depth', 0)
-            if vibrato_rate > 0:
-                vibrato = np.sin(2 * np.pi * vibrato_rate * self.age) * vibrato_depth
-                freq = freq * (1.0 + vibrato)
-            
-            phase_increment = freq / self.sample_rate
-            phases = (self.phase + np.arange(num_samples) * phase_increment) % 1.0
-            
-            # Generate waveform
-            if waveform_type == 'sine':
-                wave = np.sin(2 * np.pi * phases)
-            elif waveform_type == 'square':
-                wave = np.sign(np.sin(2 * np.pi * phases))
-            elif waveform_type == 'sawtooth':
-                wave = 2 * (phases - np.floor(phases + 0.5))
-            elif waveform_type == 'triangle':
-                wave = 2 * np.abs(2 * (phases - np.floor(phases + 0.5))) - 1
-            elif waveform_type == 'pulse':
-                wave = np.where((phases % 1.0) < 0.3, 1.0, -1.0)
-            else:
-                wave = np.sin(2 * np.pi * phases)
-            
-            output += wave * amplitude / harmonic_num  # Scale by harmonic number
-            self.phase = phases[-1]
+        # Add subtle vibrato only for sine waves
+        vibrato_rate = self.preset.get('vibrato_rate', 0)
+        vibrato_depth = self.preset.get('vibrato_depth', 0)
+        if vibrato_rate > 0 and self.age > 0.2 and waveform_type == 'sine':
+            vibrato = np.sin(2 * np.pi * vibrato_rate * self.age) * vibrato_depth
+            freq = freq * (1.0 + vibrato)
+        
+        phase_increment = freq / self.sample_rate
+        phases = (self.phase + np.arange(num_samples) * phase_increment) % 1.0
+        
+        # Generate PURE waveform - no harmonics for cleaner sound
+        if waveform_type == 'sine':
+            output = np.sin(2 * np.pi * phases)
+        elif waveform_type == 'square':
+            output = np.sign(np.sin(2 * np.pi * phases)) * 0.5
+        elif waveform_type == 'sawtooth':
+            output = 2 * (phases - np.floor(phases + 0.5)) * 0.4
+        elif waveform_type == 'triangle':
+            output = (2 * np.abs(2 * (phases - np.floor(phases + 0.5))) - 1) * 0.6
+        elif waveform_type == 'pulse':
+            output = np.where((phases % 1.0) < 0.3, 0.5, -0.5)
+        else:
+            output = np.sin(2 * np.pi * phases)
+        
+        self.phase = phases[-1]
         
         # Apply envelope and velocity
-        output *= env_value * self.velocity * 0.3
+        output = output * env_value * self.velocity * 0.9
+        
+        # Apply DC blocking and smoothing filter to prevent clicks
+        for i in range(len(output)):
+            smoothed = 0.95 * self.last_output + 0.05 * output[i]
+            output[i] = smoothed
+            self.last_output = smoothed
         
         # Update age
         self.age += num_samples * dt
         if self.released:
             self.release_age += num_samples * dt
         
-        return output
+        return output.astype(np.float32)
     
     def is_finished(self):
         """Check if voice has finished (after release)"""
@@ -194,6 +196,9 @@ class RealtimeSynth:
         # Set default genre
         self.current_genre = 'jazz'
         self.preset = GenrePreset.PRESETS[self.current_genre]
+        
+        # Master volume control (0.0 to 2.0)
+        self.master_volume = 1.0
         
         # Active voices
         self.voices: Dict[str, Voice] = {}
@@ -227,6 +232,11 @@ class RealtimeSynth:
                 # Clear all voices when changing genre
                 self.voices.clear()
     
+    def set_volume(self, volume):
+        """Set master volume (0.0 to 2.0)"""
+        with self.lock:
+            self.master_volume = max(0.0, min(2.0, volume))
+    
     def get_genre_list(self):
         """Get list of available genres"""
         return [(key, preset['name'], preset['description']) 
@@ -243,9 +253,8 @@ class RealtimeSynth:
             # Mix all active voices
             voices_to_remove = []
             for voice_id, voice in self.voices.items():
-                # Alternate waveforms based on voice
-                waveform_idx = hash(voice_id) % len(waveforms)
-                waveform = waveforms[waveform_idx]
+                # Use sine wave for cleanest sound
+                waveform = 'sine'
                 
                 # Generate audio
                 voice_output = voice.generate(frames, waveform)
@@ -259,24 +268,21 @@ class RealtimeSynth:
             for voice_id in voices_to_remove:
                 del self.voices[voice_id]
             
-            # Apply simple reverb
-            reverb_amount = self.preset['reverb']
-            for i in range(frames):
-                # Read from reverb buffer
-                reverb_sample = self.reverb_buffer[self.reverb_index]
-                
-                # Add reverb to output
-                output[i] += reverb_sample * reverb_amount * 0.3
-                
-                # Write to reverb buffer with feedback
-                self.reverb_buffer[self.reverb_index] = output[i] * 0.5
-                
-                # Advance reverb index
-                self.reverb_index = (self.reverb_index + 1) % len(self.reverb_buffer)
+            # NO REVERB - keep it clean
             
-            # Soft limiting
-            output = np.tanh(output * 0.6)
+            # Smooth limiting without distortion
+            max_val = np.max(np.abs(output))
+            if max_val > 0.7:
+                # Gentle compression only if needed
+                output = output / max_val * 0.7
             
+            # Apply master volume
+            output = output * self.master_volume
+            
+            # Final soft clipping
+            output = np.tanh(output)
+            
+            # Final output
             outdata[:, 0] = output
     
     def midi_to_freq(self, note):
@@ -335,6 +341,10 @@ class SimpleSynth:
             print(f"Audio init failed: {e}")
             self.synth = None
             self.enabled = False
+    
+    def set_volume(self, volume):
+        if self.enabled and self.synth:
+            self.synth.set_volume(volume)
     
     def set_genre(self, genre):
         if self.enabled and self.synth:
