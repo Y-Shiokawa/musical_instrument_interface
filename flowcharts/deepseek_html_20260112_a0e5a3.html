@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musical Interface - Code Flowcharts</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #3498db;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .project-info {
+            background: #e8f4fc;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+
+        .project-info p {
+            margin: 5px 0;
+        }
+
+        .flowchart-section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fff;
+            break-inside: avoid;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-number {
+            background: white;
+            color: #3498db;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .mermaid {
+            margin: 20px 0;
+            text-align: center;
+            overflow-x: auto;
+            padding: 10px;
+        }
+
+        .code-reference {
+            background: #f8f9fa;
+            border-left: 4px solid #2ecc71;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .code-reference h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .code-reference pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            margin: 10px 0;
+        }
+
+        .description {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.95rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+
+        .instructions h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .flowchart-section {
+                padding: 15px;
+            }
+            
+            .mermaid {
+                font-size: 12px;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                padding: 10px;
+            }
+            
+            .instructions {
+                display: none;
+            }
+            
+            .flowchart-section {
+                page-break-inside: avoid;
+                margin-bottom: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Musical Interface Project</h1>
+            <div class="subtitle">Code Flowcharts & System Architecture</div>
+            <div class="project-info">
+                <p><strong>Project:</strong> CARMEN (Comprehensive Adaptive Responsive Musical Expressive Network)</p>
+                <p><strong>Author:</strong> Mohamad Jaafar Yazbik</p>
+                <p><strong>Repository:</strong> https://github.com/jaafar1712/musical_instrument_interface</p>
+                <p><strong>Date:</strong> January 2026</p>
+            </div>
+        </header>
+
+        <div class="instructions">
+            <h3>📋 How to Use These Flowcharts</h3>
+            <p>• Each section shows a clear flowchart for a key component of the system</p>
+            <p>• Code references show the actual Python implementation</p>
+            <p>• For documentation: Copy-paste Mermaid code or screenshot diagrams</p>
+            <p>• Diagrams will auto-render in GitHub/GitLab Markdown with Mermaid support</p>
+        </div>
+
+        <!-- Section 1: Main Processing Loop -->
+        <div class="flowchart-section">
+            <div class="section-header">
+                <h2><span class="section-number">1</span> Main Processing Loop (60 Hz)</h2>
+            </div>
+            
+            <div class="description">
+                The core processing loop runs at 60Hz, reading sensors, processing data, and updating outputs.
+            </div>
+
+            <div class="mermaid">
+flowchart LR
+    Start([START]) --> A[Get Time] --> B[Calc dt] --> C[Acquire Lock]
+    
+    C --> D[Read Sensors] --> E[Process Signals] --> F[Map to MIDI]
+    
+    F --> G[Update GUI] --> H[Update Timestamp] --> I[Schedule Next]
+    
+    I --> End([END])
+    
+    subgraph D [Sensor Reading]
+        direction LR
+        D1[FSR] --> D2[IMU]
+    end
+    
+    subgraph E [Signal Processing]
+        direction LR
+        E1[Filter FSR] --> E2[Process IMU]
+    end
+            </div>
+
+            <div class="code-reference">
+                <h3>📝 Code Reference</h3>
+                <pre>
+def update_loop(self):
+    current_time = time.time()
+    dt = current_time - self.last_update_time
+    
+    with self.update_lock:
+        fsr_levels = self.read_fsr_levels()
+        imu_data = self.read_imu_data()
+        processed = self.process_signals(fsr_levels, dt)
+        self.midi_mapper.process(processed)
+        self.update_visualizations(processed)
+    
+    self.last_update_time = current_time
+    self.root.after(int(1000/60), self.update_loop)</pre>
+            </div>
+        </div>
+
+        <!-- Section 2: Low Pass Filter -->
+        <div class="flowchart-section">
+            <div class="section-header">
+                <h2><span class="section-number">2</span> Low Pass Filter Algorithm</h2>
+            </div>
+            
+            <div class="description">
+                Software implementation of RC low-pass filter for smoothing sensor data.
+            </div>
+
+            <div class="mermaid">
+flowchart TD
+    Start([START: LowPassFilter.update]) --> CheckDT{dt parameter<br>provided?}
+    
+    CheckDT -->|YES| UseProvided[Use provided dt]
+    CheckDT -->|NO| UseDefault[Use default dt]
+    
+    UseProvided --> CalculateAlpha
+    UseDefault --> CalculateAlpha
+    
+    CalculateAlpha[Calculate α = dt / τ + dt] --> UpdateFilter[Update filter state:<br>y_new = α × x + 1-α × y_old]
+    
+    UpdateFilter --> End([RETURN: Filtered value])
+            </div>
+
+            <div class="code-reference">
+                <h3>📝 Code Reference</h3>
+                <pre>
+class LowPassFilter:
+    def update(self, x: float, dt: float = None) -> float:
+        if dt is None:
+            dt = self.dt
+        alpha = dt / (self.tau + dt)
+        self._y = alpha * x + (1 - alpha) * self._y
+        return self._y</pre>
+            </div>
+        </div>
+
+        <!-- Section 3: FSR Channel Processing -->
+        <div class="flowchart-section">
+            <div class="section-header">
+                <h2><span class="section-number">3</span> FSR Channel Processing</h2>
+            </div>
+            
+            <div class="description">
+                Processing pipeline for each Force-Sensing Resistor channel.
+            </div>
+
+            <div class="mermaid">
+flowchart TD
+    subgraph FSRChannel_Processing
+        Start([START: FSRChannel.update]) --> Step1[1. Configure Filter<br>Set filter.dt and filter.tau]
+        
+        Step1 --> Step2[2. Apply Low-Pass Filter<br>smoothed = filter.update(raw)]
+        
+        Step2 --> Step3[3. Apply Gain<br>amplified = smoothed × gain]
+        
+        Step3 --> Step4[4. Clamp to Range<br>result = max(0.0, min(1.0, amplified))]
+        
+        Step4 --> End([END: Return result])
+    end
+            </div>
+
+            <div class="code-reference">
+                <h3>📝 Code Reference</h3>
+                <pre>
+@dataclass
+class FSRChannel:
+    def update(self, dt: float = 1/60) -> float:
+        self._filter.dt = dt
+        self._filter.tau = self.tau
+        smoothed = self._filter.update(self.raw)
+        amplified = smoothed * self.gain
+        return max(0.0, min(1.0, amplified))</pre>
+            </div>
+        </div>
+
+        <!-- Section 4: MIDI Mapping -->
+        <div class="flowchart-section">
+            <div class="section-header">
+                <h2><span class="section-number">4</span> MIDI Mapping Logic</h2>
+            </div>
+            
+            <div class="description">
+                Converts sensor levels to MIDI note on/off events with threshold detection.
+            </div>
+
+            <div class="mermaid">
+flowchart TD
+    Start([START: For each FSR channel]) --> GetNote[Get note number]
+    
+    GetNote --> CheckOn{level ≥ 0.05<br>AND note state = OFF?}
+    
+    CheckOn -->|YES| SendOn[Send MIDI Note On]
+    
+    SendOn --> SetOn[Set state = ON]
+    
+    CheckOn -->|NO| CheckOff{level < 0.05<br>AND note state = ON?}
+    
+    CheckOff -->|YES| SendOff[Send MIDI Note Off]
+    
+    SendOff --> SetOff[Set state = OFF]
+    
+    CheckOff -->|NO| NoChange[No change]
+    
+    SetOn --> Next
+    SetOff --> Next
+    NoChange --> Next
+    
+    Next --> Continue{More channels?}
+    
+    Continue -->|YES| Start
+    Continue -->|NO| End([END])
+            </div>
+
+            <div class="code-reference">
+                <h3>📝 Code Reference</h3>
+                <pre>
+def process(self, fsr_levels, imu_data):
+    for i, level in enumerate(fsr_levels):
+        note = self.notes[i]
+        if level >= 0.05 and not self._note_on[i]:
+            vel = int(level * 127)
+            self.send_note_on(note, vel)
+            self._note_on[i] = True
+        elif level < 0.05 and self._note_on[i]:
+            self.send_note_off(note)
+            self._note_on[i] = False</pre>
+            </div>
+        </div>
+
+        <!-- Section 5: System Architecture -->
+        <div class="flowchart-section">
+            <div class="section-header">
+                <h2><span class="section-number">5</span> System Architecture</h2>
+            </div>
+            
+            <div class="description">
+                Complete hardware-software data flow from sensors to audio output.
+            </div>
+
+            <div class="mermaid">
+flowchart LR
+    Hardware[HARDWARE<br>FSR + IMU] --> MCU
+    
+    MCU[MICROCONTROLLER<br>Teensy 4.0] --> USB
+    
+    USB[USB SERIAL] --> Software
+    
+    Software[PYTHON APP<br>Tkinter GUI] --> MIDI
+    
+    MIDI[MIDI MAPPING] --> Output
+    
+    Output[OUTPUT<br>MIDI + Audio]
+            </div>
+
+            <div class="code-reference">
+                <h3>📝 System Specifications</h3>
+                <pre>
+Hardware:
+- Teensy 4.0 (600MHz)
+- 5× Flexiforce A201 FSR
+- MPU-6050 IMU
+- ADS1115 16-bit ADC
+
+Software:
+- Python 3.8+ with Tkinter
+- mido MIDI library
+- sounddevice audio
+- 60Hz update rate</pre>
+            </div>
+        </div>
+
+        <!-- Section 6: Genre Presets -->
+        <div class="flowchart-section">
+            <div class="section-header">
+                <h2><span class="section-number">6</span> Genre Preset System</h2>
+            </div>
+            
+            <div class="description">
+                Audio synthesis presets for different musical genres.
+            </div>
+
+            <div class="mermaid">
+flowchart LR
+    Presets([Presets]) --> J[Jazz] --> R[Rock] --> C[Classical]
+    
+    subgraph J_Settings
+        J1[sine/triangle] --> J2[A:0.02 D:0.15] --> J3[Reverb:0.4]
+    end
+    
+    subgraph R_Settings
+        R1[saw/square] --> R2[A:0.01 D:0.2] --> R3[Distortion:0.3]
+    end
+    
+    subgraph C_Settings
+        C1[sine] --> C2[A:0.05 D:0.3] --> C3[Reverb:0.2]
+    end
+    
+    J_Settings --> Synth[Synthesizer]
+    R_Settings --> Synth
+    C_Settings --> Synth
+    
+    Synth --> Output[Audio Output]
+            </div>
+
+            <div class="code-reference">
+                <h3>📝 Code Reference</h3>
+                <pre>
+GenrePreset.PRESETS = {
+    'jazz': {
+        'waveforms': ['sine', 'triangle'],
+        'envelope': {'attack': 0.02, 'decay': 0.15, ...},
+        'reverb': 0.4,
+        'vibrato_rate': 5.5
+    },
+    'rock': {
+        'waveforms': ['sawtooth', 'square'],
+        'envelope': {'attack': 0.01, 'decay': 0.2, ...},
+        'distortion': 0.3
+    },
+    # ... more presets
+}</pre>
+            </div>
+        </div>
+
+        <!-- Section 7: Configuration File -->
+        <div class="flowchart-section">
+            <div class="section-header">
+                <h2><span class="section-number">7</span> Configuration Structure</h2>
+            </div>
+            
+            <div class="description">
+                JSON configuration file structure for hardware, mapping, and audio settings.
+            </div>
+
+            <div class="mermaid">
+graph TD
+    C[Configuration] --> H[Hardware]
+    C --> M[Mapping]
+    C --> S[Audio]
+    
+    H --> F[FSR]
+    H --> I[IMU]
+    
+    F --> F1[zero: 0.012]
+    F --> F2[sens: 0.045]
+    F --> F3[coeffs: 1.0, -0.3, 0.05]
+    
+    I --> I1[acc bias: 0.01, -0.02, 0.005]
+    I --> I2[gyro bias: 0.1, -0.15, 0.05]
+    
+    M --> M1[notes: 60-67]
+    M --> M2[vel curve: exp]
+    M --> M3[pitch: ±2]
+    
+    S --> S1[preset: jazz]
+    S --> S2[poly: 8]
+    S --> S3[rate: 44.1k]
+            </div>
+
+            <div class="code-reference">
+                <h3>📝 Code Reference</h3>
+                <pre>
+{
+  "hardware": {
+    "fsr_calibration": {
+      "channel_0": {
+        "zero_point": 0.012,
+        "sensitivity": 0.045,
+        "nonlinearity_coeffs": [1.0, -0.3, 0.05]
+      }
+    }
+  },
+  "mapping": {
+    "note_assignment": [60, 62, 64, 65, 67],
+    "velocity_curve": "exponential"
+  },
+  "audio": {
+    "preset": "jazz",
+    "polyphony": 8,
+    "sample_rate": 44100
+  }
+}</pre>
+            </div>
+        </div>
+
+        <!-- Section 8: Unit Tests -->
+        <div class="flowchart-section">
+            <div class="section-header">
+                <h2><span class="section-number">8</span> Unit Tests</h2>
+            </div>
+            
+            <div class="description">
+                Automated tests for verifying filter behavior and MIDI mapping logic.
+            </div>
+
+            <div class="mermaid">
+flowchart TD
+    Tests([Unit Tests]) --> Filter
+    
+    subgraph Filter [Low Pass Filter Test]
+        A[Setup filter] --> B[Step input test]
+        B --> C[Check 63% response]
+        C --> D[Assert pass/fail]
+    end
+    
+    Tests --> MIDI
+    
+    subgraph MIDI [MIDI Mapping Test]
+        E[Setup mapper] --> F[Test note_on]
+        F --> G[Test note_off]
+        G --> H[Assert states]
+    end
+    
+    Filter --> Report
+    MIDI --> Report
+    
+    Report[Test Report]
+            </div>
+
+            <div class="code-reference">
+                <h3>📝 Code Reference</h3>
+                <pre>
+def test_low_pass_filter():
+    filter = LowPassFilter(tau=0.1, dt=0.0167)
+    for i in range(100):
+        output = filter.update(1.0 if i >= 10 else 0.0)
+    assert abs(output - 0.63) < 0.05
+
+def test_midi_mapping():
+    mapper = MidiMapper(mock_driver)
+    mapper.process([0.1], {})
+    assert mapper._note_on[0] == True
+    mapper.process([0.01], {})
+    assert mapper._note_on[0] == False</pre>
+            </div>
+        </div>
+
+        <footer>
+            <p>Generated for Musical Interface Project Documentation</p>
+            <p>All flowcharts created with Mermaid.js | https://mermaid.js.org</p>
+            <p>Repository: https://github.com/jaafar1712/musical_instrument_interface</p>
+        </footer>
+    </div>
+</body>
+</html>
