@@ -10,7 +10,7 @@ from typing import List, Callable, Optional
 
 # Mapping defaults
 DEFAULT_BASE_NOTE = 60  # Middle C (C4)
-DEFAULT_NOTES = [DEFAULT_BASE_NOTE + i for i in range(5)]  # chromatic for 5 FSRs
+DEFAULT_NOTES = [DEFAULT_BASE_NOTE + i for i in range(10)]  # chromatic for 10 FSRs
 DEFAULT_THRESHOLD = 0.05  # when to trigger note on/off
 
 class MIDIDriver:
@@ -67,6 +67,9 @@ class MidiMapper:
 
     def process(self, fsr_levels: List[float], imu_snapshot: dict):
         # fsr_levels: list of smoothed, amplified levels 0..1
+        if len(fsr_levels) > len(self._note_on):
+            self._note_on.extend([False] * (len(fsr_levels) - len(self._note_on)))
+
         for i, level in enumerate(fsr_levels):
             note = self.notes[i] if i < len(self.notes) else (DEFAULT_BASE_NOTE + i)
             instrument = f'fsr{i}'

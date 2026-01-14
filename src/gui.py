@@ -1,7 +1,7 @@
 """
 Tkinter GUI for the simulator.
 
-- Provides sliders for 5 FSR sensors
+- Provides sliders for 10 FSR sensors
 - Sliders for IMU axes (Ax, Ay, Az, Gx, Gy, Gz)
 - Controls for smoothing (tau) and gain per FSR (simple global control provided)
 - Connect button for MIDI
@@ -17,6 +17,8 @@ from audio_synth import SimpleSynth
 from threading import Lock
 
 UPDATE_HZ = 60.0
+FSR_COUNT = 10
+FSR_COLUMNS = 5
 
 class App:
     def __init__(self):
@@ -25,7 +27,7 @@ class App:
         self.lock = Lock()
 
         # sensors
-        self.fsrs = [FSRChannel(i, tau=0.05, gain=1.0) for i in range(5)]
+        self.fsrs = [FSRChannel(i, tau=0.05, gain=1.0) for i in range(FSR_COUNT)]
         self.imu = IMUSimulator(gyro_range_dps=250.0)
 
         # audio synth
@@ -67,9 +69,11 @@ class App:
         self.fsr_sliders = []
         self.fsr_value_labels = []
         self.fsr_freeze_vars = []
-        for i in range(5):
+        for i in range(FSR_COUNT):
             col_frame = ttk.Frame(fsr_frame)
-            col_frame.grid(row=0, column=i, padx=6, pady=6)
+            row = i // FSR_COLUMNS
+            col = i % FSR_COLUMNS
+            col_frame.grid(row=row, column=col, padx=6, pady=6)
             
             # Value display
             val_lbl = ttk.Label(col_frame, text="0", width=6, anchor="center")
