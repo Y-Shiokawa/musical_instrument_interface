@@ -6,6 +6,8 @@ MIDI mapping module.
 """
 
 from typing import Callable, List, Optional
+from collections import deque
+import time
 import mido
 
 DEFAULT_BASE_NOTE = 60  # C4
@@ -16,6 +18,11 @@ T_MIN = -200
 T_MAX = 200
 V_THRESHOLD = 10
 V_MAX = 100
+IMU_WINDOW_SEC = 1.5
+IMU_MIN_FREQ = 2.0
+IMU_MAX_FREQ = 10.0
+IMU_MIN_AMPLITUDE = 0.05
+VIBRATO_SCALE_MAX = 2.0
 
 
 class MIDIDriver:
@@ -66,6 +73,8 @@ class MidiMapper:
 
         self._note_on = False
         self._current_note = None
+        self._imu_samples = deque()
+        self._last_vibrato_scale = 1.0
 
     def _clip01(self, value: float) -> float:
         return max(0.0, min(1.0, value))
@@ -112,7 +121,58 @@ class MidiMapper:
     def _velocity_from_volume(self, volume: float) -> int:
         return max(1, min(127, int(volume * 127)))
 
+    def _update_vibrato_from_imu(self, imu_snapshot: dict):
+        if not (self.audio_synth and hasattr(self.audio_synth, "set_vibrato_scale")):
+            return
+
+        gx = float(imu_snapshot.get("gx", 0.0))
+        gy = float(imu_snapshot.get("gy", 0.0))
+        gz = float(imu_snapshot.get("gz", 0.0))
+        magnitude = (abs(gx) + abs(gy) + abs(gz)) / 3.0
+
+        now = time.time()
+        self._imu_samples.append((now, magnitude))
+        cutoff = now - IMU_WINDOW_SEC
+        while self._imu_samples and self._imu_samples[0][0] < cutoff:
+            self._imu_samples.popleft()
+
+        if len(self._imu_samples) < 6:
+            return
+
+        times = [t for t, _ in self._imu_samples]
+        values = [v for _, v in self._imu_samples]
+        duration = times[-1] - times[0]
+        if duration <= 0.0:
+            return
+
+        mean_val = sum(values) / len(values)
+        centered = [v - mean_val for v in values]
+        amplitude = max(centered) - min(centered)
+        if amplitude < IMU_MIN_AMPLITUDE:
+            scale = 1.0
+        else:
+            crossings = 0
+            for i in range(1, len(centered)):
+                prev = centered[i - 1]
+                curr = centered[i]
+                if (prev <= 0.0 < curr) or (prev >= 0.0 > curr):
+                    crossings += 1
+            freq = crossings / (2.0 * duration) if duration > 0 else 0.0
+            if IMU_MIN_FREQ <= freq <= IMU_MAX_FREQ:
+                t = (freq - IMU_MIN_FREQ) / (IMU_MAX_FREQ - IMU_MIN_FREQ)
+                scale = 1.0 + t * (VIBRATO_SCALE_MAX - 1.0)
+            else:
+                scale = 1.0
+
+        if abs(scale - self._last_vibrato_scale) >= 0.02:
+            self.audio_synth.set_vibrato_scale(scale)
+            self._last_vibrato_scale = scale
+
     def process(self, fsr_levels: List[float], imu_snapshot: dict):
+        if imu_snapshot is None:
+            imu_snapshot = {}
+        self._update_vibrato_from_imu(imu_snapshot)
+
         # fsr_levels are 0..1; convert to 0..100
         values = [max(0.0, min(1.0, v)) * 100.0 for v in fsr_levels]
         if len(values) < FSR_COUNT:
