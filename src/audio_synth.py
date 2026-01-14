@@ -95,6 +95,8 @@ class GenrePreset:
         }
     }
 
+VIBRATO_DEPTH_SCALE = 0.5
+
 class Voice:
     """Individual synthesizer voice with envelope and effects"""
     
@@ -140,7 +142,7 @@ class Voice:
         # Add subtle vibrato only for sine waves
         vibrato_rate = self.preset.get('vibrato_rate', 0)
         vibrato_scale = self.preset.get('vibrato_scale', 1.0)
-        vibrato_depth = self.preset.get('vibrato_depth', 0) * vibrato_scale
+        vibrato_depth = self.preset.get('vibrato_depth', 0) * vibrato_scale * VIBRATO_DEPTH_SCALE
         if vibrato_rate > 0 and self.age > 0.2 and waveform_type == 'sine':
             vibrato = np.sin(2 * np.pi * vibrato_rate * self.age) * vibrato_depth
             freq = freq * (1.0 + vibrato)
